@@ -18,8 +18,7 @@ app.use("/api", authRoutes);
 // health check route
 app.get("/health", (req, res) => {
   res.json({ ok: true });
-});
-
+})
 // health check
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
