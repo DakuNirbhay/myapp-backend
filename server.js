@@ -1,41 +1,48 @@
-// server.js (works without installing MongoDB)
+// server.js
+
+require("dotenv").config(); // Loads .env variables
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const path = require("path")
+const path = require("path");
+
+// import routes
 const authRoutes = require(path.join(__dirname, "./routes/authRoutes.js"));
-const { MongoMemoryServer } = require("mongodb-memory-server");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // middleware
-app.use(cors()); 
+app.use(cors());
 app.use(express.json());
 
 // routes
 app.use("/api", authRoutes);
+
 // health check route
-app.get("/health", (req, res) => {
-  res.json({ ok: true });
-})
-// health check
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-// start in-memory MongoDB then start server
-async function startServer() {
+// connect to MongoDB and start the server
+(async () => {
   try {
-    const mongoServer = await MongoMemoryServer.create();
-    const uri = mongoServer.getUri();
-    await mongoose.connect(uri);
-    console.log("✅ MongoDB Memory Server connected");
+    const mongoURI =
+      process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/uon-event";
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    // Connect to MongoDB
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
-  } catch (err) {
-    console.error("❌ Error starting server:", err);
-  }
-}
 
-startServer();
+    console.log("✅ MongoDB connected:", mongoURI);
+
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("❌ MongoDB connection failed:", error.message);
+    process.exit(1);
+  }
+})();
